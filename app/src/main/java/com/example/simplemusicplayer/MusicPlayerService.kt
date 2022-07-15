@@ -11,18 +11,18 @@ import android.os.Build
 import android.os.IBinder
 import android.widget.Toast
 
-class MusicPlayerService : Service(){
+class MusicPlayerService : Service() {
 
     var mMediaPlayer: MediaPlayer? = null // 미디어 플레이어 객체를 null로 초기화
     var mBinder: MusicPlayerBinder = MusicPlayerBinder()
 
-    inner class MusicPlayerBinder : Binder(){     // 바인더를 반환해 서비스 함수를 쓸 수 있게
-        fun getService(): MusicPlayerService{
+    inner class MusicPlayerBinder : Binder() {     // 바인더를 반환해 서비스 함수를 쓸 수 있게
+        fun getService(): MusicPlayerService {
             return this@MusicPlayerService
         }
     }
 
-    override fun onCreate(){
+    override fun onCreate() {
         super.onCreate()
         startForegroundService()
     }
@@ -38,8 +38,8 @@ class MusicPlayerService : Service(){
         return START_STICKY
     }
 
-    fun startForegroundService(){
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    fun startForegroundService() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE)
                     as NotificationManager
             val mChannel = NotificationChannel(
@@ -62,17 +62,52 @@ class MusicPlayerService : Service(){
     // 서비스 종료
     override fun onDestroy() {
         super.onDestroy()
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             stopForeground(true);
         }
     }
 
     // 재생 확인용
-    fun isPlaying() : Boolean{
+    fun isPlaying(): Boolean {
         return (mMediaPlayer != null && mMediaPlayer?.isPlaying ?: false)
     }
-    fun play(){}
-    fun pause(){}
-    fun stop(){}
+
+
+    fun play() {
+        if (mMediaPlayer == null) {
+            // 음악 파일 리소스를 가져와 미디어 플레이어 객체를 할당
+            mMediaPlayer = MediaPlayer.create(this, R.raw.chocolate)
+
+            mMediaPlayer?.setVolume(1.0f, 1.0f); // 볼륨 지정
+            mMediaPlayer?.isLooping = true // 반복재생 여부
+            mMediaPlayer?.start()
+        } else { // 음악 재생
+            if (mMediaPlayer!!.isPlaying) {
+                Toast.makeText(this, "이미 음악 실행 중", Toast.LENGTH_SHORT).show()
+            } else {
+                mMediaPlayer?.start() // 음악 재생
+            }
+        }
+    }
+
+    // 일시 정지
+    fun pause() {
+        mMediaPlayer?.let {
+            if (it.isPlaying) {
+                it.pause() // 음악 일시정지
+            }
+        }
+    }
+
+    // 재생 중지
+    fun stop() {
+        mMediaPlayer?.let {
+            if (it.isPlaying) {
+                it.stop() // 음악 멈춤
+                it.release() // 미디어 플레이어에 할당된 자원 해제
+                mMediaPlayer = null
+            }
+        }
+    }
 
 }
